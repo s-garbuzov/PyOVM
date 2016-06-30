@@ -1,8 +1,12 @@
 
-from ovs import OVMServer
+import utils.sxp as sxp
+
+from ovs.base import OVMServer
+from domain import DomainInfo
 from utils.ssh_session import SSHSession
 
-# Subclass of the 'NetworkDevice' base class
+
+# Subclass of the  'OVMServer' base class
 class OVS33X(OVMServer):
     """Cisco IOS-XR device with device specific methods."""
 
@@ -16,6 +20,11 @@ class OVS33X(OVMServer):
         self._session = None
         for k, v in kwargs.items():
             setattr(self, k, v)
+
+        # TODO: need a way to auto-detect 'login prompt' pattern
+        #       from the destination host
+        self.base_prompt = "%s@%s" % (self.username, self.host)
+        #print "^^^^^^ %s" % self.base_prompt
 
     def to_str(self):
         return "%s %s:%s" % (self.get_os_type(), self.ip_addr, self.port)
@@ -55,6 +64,50 @@ class OVS33X(OVMServer):
     def disconnect(self):
         if(self._session is not None):
             self._session.close()
+
+    def strip_command(self, command, output):
+        lines = output.split('\n')
+        first_line = lines[0]
+        if command.strip() in first_line.strip():
+            return '\n'.join(lines[1:])
+        else:
+            return output
+
+    def strip_prompt(self, output):
+        lines = output.split('\n')
+        last_line = lines[-1]
+        if self.base_prompt in last_line:
+            return '\n'.join(lines[:-1])
+        else:
+            return output
+
+    def get_domains_info(self):
+        """
+        Retrieve from this OVS server all Xen domains information
+        and serialize it to internal objects representation.
+        NOTE: OVS server returns the data encoded in 'symbolic expression'
+              (Lisp programming language notation) format.
+        """
+        domains = []
+        try:
+            cmd = "xm list -l\n"
+            out = self.execute_command(cmd, 1)
+            out = self.strip_command(cmd, out)
+            out = self.strip_prompt(out)
+            # print out
+            info_sxp = sxp.all_from_string(out)
+            # print info_sxp
+            for dom_info in info_sxp:
+                dom = DomainInfo(dom_info)
+                domains.append(dom)
+                # print "<<<<<<<<<<<<<<<"
+                # print dom.to_json()
+                # print ">>>>>>>>>>>>>>>"
+        except (Exception) as e:
+            print("!!!Error: %s" % repr(e))
+            raise e
+
+        return domains
 
     def enable_privileged_commands(self):
         assert(self._session is not None)
@@ -99,11 +152,30 @@ class OVS33X(OVMServer):
             res.append(Domain(line))
         return res
 
+    def get_domain_info(self, name):
+        """
+        Retrieve from this OVS server a given Xen domain information
+        and serialize it to internal objects representation.
+        NOTE: OVS server returns the data encoded in 'symbolic expression'
+              (Lisp programming language notation) format.
+        """
+        domain = None
+        try:
+            cmd = "xm list -l %s\n" % name
+            out = self.execute_command(cmd, 1)
+            out = self.strip_command(cmd, out)
+            out = self.strip_prompt(out)
+            # print out
+            info_sxp = sxp.all_from_string(out)
+            domain = DomainInfo(info_sxp[0])
+        except (Exception) as e:
+            print("!!!Error: %s" % repr(e))
+            raise e
 
-    def get_domain(self, name):
-        res = []
-        cmd = "xm list -l %s\n" % name
-        out = self.execute_command(cmd)
+        return domain
+        
+        
+        
         lines = out.split("\n")
         last_idx = len(lines) -1
         for idx, line in enumerate(lines):
@@ -126,7 +198,6 @@ class OVS33X(OVMServer):
     def execute_command(self, command, read_delay=.1):
         assert(self._session is not None)
         self._session.send(command)
-        # print ("1)+++++++++")
         output = self._session.recv(read_delay)
         return output
 

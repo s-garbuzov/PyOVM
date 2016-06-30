@@ -83,13 +83,15 @@ class SSHSession(object):
         """Wait until data is ready to be read (is buffered)."""
         i = 0
         max_loops=100
+        # max_loops = read_delay * 2
+        time.sleep(read_delay)
         while i <= max_loops:
             if self._remote_shell.recv_ready():
                 # print ("2)+++++++++")
                 return True
             else:
                 i += 1
-            time.sleep(.5)
+            time.sleep(.1)
         raise Exception("Timed out waiting for recv_ready.")
 
     def execute_command(self, cmd, read_delay=1):

@@ -1,6 +1,6 @@
 
 import json
-import ovs.sxp as sxp
+import utils.sxp as sxp
 
 
 
@@ -261,14 +261,13 @@ def get_domains_info():
     info = s
     info_sxp = sxp.all_from_string(info)
     # print info_sxp
-    result = []
     for dom_info in info_sxp:
         dom = DomainInfo(dom_info)
         domains.append(dom)
         # print "<<<<<<<<<<<<<<<"
         # print dom.to_json()
         # print ">>>>>>>>>>>>>>>"
-    return result
+    return domains
 
 class DomainInfo(object):
     def __init__(self, info_sxp):
@@ -337,9 +336,9 @@ class Image(object):
 
 if __name__ == "__main__":
     l = get_domains_info()
-    #print type(l)
-    #for e in l:
-    #    print "===> %s" % type(e)
+    print type(l)
+    for e in l:
+        print "%s" % e.to_json()
     
     
     

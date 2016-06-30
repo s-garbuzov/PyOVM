@@ -1,6 +1,6 @@
 
 from ovs33x import OVS33X
-from ssh_session import SSHSession
+from utils.ssh_session import SSHSession
 
 CLASS_MAP = {
     # 'ovs32x': OVS32X,

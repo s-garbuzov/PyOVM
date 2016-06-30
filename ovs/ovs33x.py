@@ -1,6 +1,6 @@
 
 from ovs import OVMServer
-from ssh_session import SSHSession
+from utils.ssh_session import SSHSession
 
 # Subclass of the 'NetworkDevice' base class
 class OVS33X(OVMServer):

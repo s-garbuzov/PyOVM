@@ -1,4 +1,4 @@
-from ssh_session import SSHSession
+from utils.ssh_session import SSHSession
 
 
 # Base class

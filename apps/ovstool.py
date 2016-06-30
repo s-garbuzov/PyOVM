@@ -20,12 +20,24 @@ ovs_info = {
 
 
 def show_domain(ovs_info, name):
+    debug = False
     try:
         ovs = OVSFactory.create(ovs_info)
         ovs.connect()
         if(ovs.connected()):
-            domain = ovs.get_domain_info(name)
-            print domain.to_json()
+            dom = ovs.get_domain_info(name)
+            if debug:
+                print dom.to_json()
+            else:
+                print("\n").strip()
+                print(" Domain Info (on %s server) \n" % ovs_info['host'])
+                print("  %-3s %-32s %-6s %-5s %-10s" %
+                      ("ID", "Name", "Memory", "VCPUs", "Time"))
+                print("  %s %s %s %s %s" % ("-"*3, "-"*32, "-"*6, "-"*5, "-"*10))
+                print("  %-3s %-32s %-6s %-5s %-10s" %
+                      (dom.domid, dom.name,
+                       dom.memory, dom.vcpus, dom.cpu_time))
+                print("\n")
             ovs.disconnect()
     except(Exception) as e:
         print "!!!Error: %s\n" % repr(e)
@@ -46,7 +58,7 @@ def show_domains_info(ovs_info):
                     print ">>>>>>>>>>>>>>>"
             else:
                 print("\n").strip()
-                print(" Domains Info (%s) \n" % ovs_info['host'])
+                print(" Domains Info (on %s server) \n" % ovs_info['host'])
                 print("  %-3s %-32s %-6s %-5s %-10s" %
                       ("ID", "Name", "Memory", "VCPUs", "Time"))
                 print("  %s %s %s %s %s" % ("-"*3, "-"*32, "-"*6, "-"*5, "-"*10))

@@ -18,6 +18,7 @@ class OVS33X(OVMServer):
         OVMServer.__init__(self, 'Oracle', 'OVS')
         # Initialize this class attributes
         self._session = None
+        self.max_bytes = 9000
         for k, v in kwargs.items():
             setattr(self, k, v)
 

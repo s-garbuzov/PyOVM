@@ -9,8 +9,7 @@ CLASS_MAP = {
 }
 
 class OVSFactory(object):
-    """Creates an object instance based on OVS version"""
-    """Select the class to be instantiated based on OVS version."""
+    """Creates an OVS server object instance based on a server's version"""
     
     # Decorate 'create' function as a static method (a one that
     # does not require an implicit 'self' as a first argument)

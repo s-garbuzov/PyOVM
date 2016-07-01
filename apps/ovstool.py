@@ -31,29 +31,29 @@ def show_domain_info(ovs_info, name):
             else:
                 print("\n").strip()
                 print(" OVS Server '%s'\n" % ovs_info['host'])
-                print("  Domain Info - %s\n" % dom.name)
-                print("   ID       : %s" % dom.domid)
-                print("   Name     : %s" % dom.name)
-                print("   Pool Name: %s" % dom.pool_name)
+                print("   Domain Info - %s\n" % dom.name)
+                print("     ID       : %s" % dom.domid)
+                print("     Name     : %s" % dom.name)
+                print("     Pool Name: %s" % dom.pool_name)
                 
                 print("\n").strip()
-                print("   %-10s %-10s %-5s %-20s %-20s" %
+                print("     %-10s %-10s %-5s %-20s %-20s" %
                       ("Memory", "Max Memory", "VCPUs",
                        "CPU Time", "Start Time"))
-                print("   %s %s %s %s %s" %
+                print("     %s %s %s %s %s" %
                       ("-"*10, "-"*10, "-"*5, "-"*20, "-"*20))
-                print("   %-10s %-10s %-5s %-20s %-20s" %
+                print("     %-10s %-10s %-5s %-20s %-20s" %
                       (dom.memory, dom.maxmem,
                        dom.vcpus, dom.cpu_time, dom.start_time))
                 print("\n").strip()
                 
                 devices = dom.devices
                 for device in devices:
-                    print("%s" % device.brief_str(indent=3)) 
+                    print("%s" % device.brief_str(indent=4)) 
                 
                 images = dom.images
                 for image in images:
-                    print("%s" % image.brief_str(indent=3))
+                    print("%s" % image.brief_str(indent=4))
 
             ovs.disconnect()
     except(Exception) as e:
@@ -76,13 +76,13 @@ def show_domains_info(ovs_info):
             else:
                 print("\n").strip()
                 print(" OVS Server '%s'\n" % ovs_info['host'])
-                print("  Domains Info\n")
-                print("   %-3s %-32s %-6s %-5s %-10s" %
+                print("   Domains Info\n")
+                print("    %-3s %-32s %-6s %-5s %-10s" %
                       ("ID", "Name", "Memory", "VCPUs", "Time"))
-                print("   %s %s %s %s %s" %
+                print("    %s %s %s %s %s" %
                       ("-"*3, "-"*32, "-"*6, "-"*5, "-"*15))
                 for dom in domains:
-                    print("   %-3s %-32s %-6s %-5s %-10s" %
+                    print("    %-3s %-32s %-6s %-5s %-10s" %
                           (dom.domid, dom.name,
                            dom.memory, dom.vcpus, dom.cpu_time))
                 print("\n")

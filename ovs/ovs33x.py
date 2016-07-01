@@ -8,44 +8,54 @@ from utils.ssh_session import SSHSession
 
 # Subclass of the  'OVMServer' base class
 class OVS33X(OVMServer):
-    """Cisco IOS-XR device with device specific methods."""
+    """Oracle OVS server (release 3.3.X)."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, session):
+    #def __init__(self, **kwargs):
         """Allocate and return a new instance object."""
-
+        assert(isinstance(session, SSHSession))
         # Invoke the superclass initialization method to initialize
         # inherited attributes
         OVMServer.__init__(self, 'Oracle', 'OVS')
         # Initialize this class attributes
-        self._session = None
+        self._session = session
         self.max_bytes = 9000
+        """
         for k, v in kwargs.items():
             setattr(self, k, v)
-
+        """
+        
         # TODO: need a way to auto-detect 'login prompt' pattern
         #       from the destination host
-        self.base_prompt = "%s@%s" % (self.username, self.host)
+        self.base_prompt = ("%s@%s" % 
+                            (self._session.username, self._session.host))
         #print "^^^^^^ %s" % self.base_prompt
 
     def to_str(self):
-        return "%s %s:%s" % (self.get_os_type(), self.ip_addr, self.port)
+        return ("%s %s:%s" % (self.get_os_type(),
+                              self.get_addr, self.get_port))
 
     def get_addr(self):
-        return self.ip_addr
+        return self.session.host
+        # return self.ip_addr
 
     def get_port(self):
-        return self.port
+        return self.session.port
+        #return self.port
 
+    '''
     def get_firmware_version(self):
         """
         Class specific method that retrieves and returns
         the firmware version from the device.
         """
         pass
-
+    '''
+    
     def connected(self):
         return True if(self._session is not None) else False
-
+    
+    """
     def connect(self):
         if(self._session is not None):
             return self._session
@@ -61,7 +71,8 @@ class OVS33X(OVMServer):
         if(session.open() is not None):
             self._session = session
         return self._session
-
+    """
+    
     def disconnect(self):
         if(self._session is not None):
             self._session.close()

@@ -1,8 +1,10 @@
 
+import string
 import utils.sxp as sxp
 
 from ovs.base import OVMServer
 from domain import DomainInfo
+from cluster import ClusterConfigInfo
 from utils.ssh_session import SSHSession
 
 
@@ -121,6 +123,41 @@ class OVS33X(OVMServer):
 
         return domains
 
+    def get_cluster_cfg_info(self):
+        cmd = "cat /etc/ocfs2/cluster.conf\n"
+        out = self.execute_command(cmd, 1)
+        out = self.strip_command(cmd, out)
+        out = self.strip_prompt(out)
+        #self._session.send(cmd)
+        #out = self._session.recv(read_delay=1)
+        cluster = ClusterConfigInfo(out)
+        return cluster
+        """
+        cfg_dict = {'node': [], 'cluster': [], 'heartbeat': []}
+        
+        lines = out.split("\n")
+        # print lines
+        for line in lines:
+            #line = line.split('#')[0].strip()
+            if not line:
+                continue
+            elif line.startswith('node:'):
+                d = {}
+                cfg_dict['node'].append(d)
+            elif line.startswith('cluster:'):
+                d = {}
+                cfg_dict['cluster'].append(d)
+            elif line.startswith('heartbeat:'):
+                d = {}
+                cfg_dict['heartbeat'].append(d)
+            else:
+                parts = map(string.strip, line.split('='))
+                if len(parts) == 2 and parts[0]:
+                    d[parts[0]] = parts[1]
+
+        print cfg_dict
+        """
+
     def enable_privileged_commands(self):
         assert(self._session is not None)
         cmd = "enable\n"
@@ -152,7 +189,7 @@ class OVS33X(OVMServer):
             cmd = "configure terminal\n"
             self.execute_command(cmd, 1)
 
-    def get_domains(self):
+    def get_domains_list(self):
         res = []
         cmd = "xl list\n"
         out = self.execute_command(cmd)
@@ -166,7 +203,7 @@ class OVS33X(OVMServer):
 
     def get_domain_info(self, name):
         """
-        Retrieve from this OVS server a given Xen domain information
+        Retrieve from this OVS server information about given Xen domain
         and serialize it to internal objects representation.
         NOTE: OVS server returns the data encoded in 'symbolic expression'
               (Lisp programming language notation) format.
@@ -185,34 +222,12 @@ class OVS33X(OVMServer):
             raise e
 
         return domain
-        
-        
-        
-        lines = out.split("\n")
-        last_idx = len(lines) -1
-        for idx, line in enumerate(lines):
-            if idx == 0 or idx == last_idx:
-                continue
-            #res.append(line)
-            print line
-        # print res
-        """
-        lines = out.split("\n")
-        last_idx = len(lines) -1
-        for idx, line in enumerate(lines):
-            if idx == 0 or idx == 1 or idx == last_idx:
-                continue
-            res.append(Domain(line))
-        return res
-        """
-        
 
     def execute_command(self, command, read_delay=.1):
         assert(self._session is not None)
         self._session.send(command)
         output = self._session.recv(read_delay)
         return output
-
 
 class Domain(object):
     def __init__(self, s):
@@ -227,12 +242,3 @@ class Domain(object):
 
     def do_print(self):
         pass
-    """
-    def to_dict(self):
-        d = {'name': "", 'id': "", 'mem': "", 'vcpus': "", 'state'}
-        print "Domain=> %s" % self.str
-    """
-
-
-
-

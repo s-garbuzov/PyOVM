@@ -8,7 +8,7 @@ import json
 from ovs.factory import OVSFactory
 
 # OVS specific info
-ovs_info = {
+server = {
     'host': 'ovs233',
     'connection': 'ssh',
     'port': 22,
@@ -19,18 +19,18 @@ ovs_info = {
 }
 
 
-def show_domain_info(ovs_info, name):
+def show_domain_info(server, dom_name):
     debug = False
     try:
-        ovs = OVSFactory.create(ovs_info)
+        ovs = OVSFactory.create(server)
         #ovs.connect()
         if(ovs.connected()):
-            dom = ovs.get_domain_info(name)
+            dom = ovs.get_domain_info(dom_name)
             if debug:
                 print dom.to_json()
             else:
                 print("\n").strip()
-                print(" OVS Server '%s'\n" % ovs_info['host'])
+                print(" OVS Server '%s'\n" % server['host'])
                 print("   Domain Info - %s\n" % dom.name)
                 print("     ID       : %s" % dom.domid)
                 print("     Name     : %s" % dom.name)
@@ -60,10 +60,10 @@ def show_domain_info(ovs_info, name):
         print "!!!Error[show_domain]: %s\n" % repr(e)
         raise e
 
-def show_domains_info(ovs_info):
+def show_domains_info(server):
     debug = False
     try:
-        ovs = OVSFactory.create(ovs_info)
+        ovs = OVSFactory.create(server)
         # ovs.connect()
         if(ovs.connected()):
             domains = ovs.get_domains_info()
@@ -75,7 +75,7 @@ def show_domains_info(ovs_info):
                     print ">>>>>>>>>>>>>>>"
             else:
                 print("\n").strip()
-                print(" OVS Server '%s'\n" % ovs_info['host'])
+                print(" OVS Server '%s'\n" % server['host'])
                 print("   Domains Info\n")
                 print("    %-3s %-32s %-6s %-5s %-10s" %
                       ("ID", "Name", "Memory", "VCPUs", "Time"))
@@ -94,17 +94,15 @@ def show_domains_info(ovs_info):
         #assert(False)
         return None
 
-
-
-def show_domains_list(ovs_info):
+def show_domains_list(server):
     try:
-        ovs = OVSFactory.create(ovs_info)
-        ovs.connect()
+        ovs = OVSFactory.create(server)
+        # ovs.connect()
         if(ovs.connected()):
             domains = ovs.get_domains()
 
             print("\n").strip()
-            print(" Domains Info (%s) \n" % ovs_info['host'])
+            print(" Domains Info (%s) \n" % server['host'])
             print("  %-3s %-32s %-6s %-5s %-10s" %
                   ("ID", "Name", "Memory", "VCPUs", "Time"))
             print("  %s %s %s %s %s" % ("-"*3, "-"*32, "-"*6, "-"*5, "-"*10))
@@ -118,10 +116,51 @@ def show_domains_list(ovs_info):
         print "!!!Error: %s\n" % repr(e)
         raise e
 
+def show_cluster_cfg(server):
+    try:
+        ovs = OVSFactory.create(server)
+        # ovs.connect()
+        if(ovs.connected()):
+            cfg = ovs.get_cluster_cfg_info()
+            # print "!!! cluster_cfg=%s" % cfg.to_json()
+            print("\n").strip()
+            print(" OVS Server '%s'\n" % server['host'])
+            print("   Cluster Configuration Info")
+            names = cfg.get_cluster_names()
+            for name in names:
+                print("\n").strip()
+                print("    Cluster '%s'\n" % name)
+                print("       Nodes Count: %s" % cfg.get_node_count(name))
+                print("       Heartbeat Mode: %s" % cfg.get_hb_mode(name))
+                print("\n").strip()
+                print("       Nodes\n")
+                nodes = cfg.get_nodes(name)
+                for node in nodes:
+                    print("         Name: %s" % node['name'])
+                    print("         Number: %s" % node['number'])
+                    print("         IPv4 Address: %s" % node['ip_address'])
+                    print("         IPv4 Port: %s" % node['ip_port'])
+                    print("\n").strip()
+                    
+                print("       Heartbeats\n")
+                hbs = cfg.get_heartbeats(name)
+                for hb in hbs:
+                    print("         Region UUID: %s" % hb['region'])
+
+                print("\n").strip()
+
+            ovs.disconnect()
+    except(Exception) as e:
+        print "!!!Error: %s\n" % repr(e)
+        raise e
+    pass
+
 def main():
-    #show_domains_info(ovs_info)
-    show_domain_info(ovs_info, "0004fb00000600007c522c7d71072a52")
+    show_cluster_cfg(server)
+    #show_domains_info(server)
+    #show_domain_info(server, "0004fb00000600007c522c7d71072a52")
     # return
+    pass
     
     
     # show_domains_list(ovs_info)

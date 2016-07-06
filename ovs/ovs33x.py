@@ -4,7 +4,7 @@ import utils.sxp as sxp
 
 from ovs.base import OVMServer
 from domain import DomainInfo
-from cluster import ClusterConfigInfo
+from cluster import ClusterConfigFileInfo, ClusterO2CB
 from utils.ssh_session import SSHSession
 
 
@@ -128,35 +128,24 @@ class OVS33X(OVMServer):
         out = self.execute_command(cmd, 1)
         out = self.strip_command(cmd, out)
         out = self.strip_prompt(out)
-        #self._session.send(cmd)
-        #out = self._session.recv(read_delay=1)
-        cluster = ClusterConfigInfo(out)
+        cluster = ClusterConfigFileInfo(out)
         return cluster
-        """
-        cfg_dict = {'node': [], 'cluster': [], 'heartbeat': []}
-        
-        lines = out.split("\n")
-        # print lines
-        for line in lines:
-            #line = line.split('#')[0].strip()
-            if not line:
-                continue
-            elif line.startswith('node:'):
-                d = {}
-                cfg_dict['node'].append(d)
-            elif line.startswith('cluster:'):
-                d = {}
-                cfg_dict['cluster'].append(d)
-            elif line.startswith('heartbeat:'):
-                d = {}
-                cfg_dict['heartbeat'].append(d)
-            else:
-                parts = map(string.strip, line.split('='))
-                if len(parts) == 2 and parts[0]:
-                    d[parts[0]] = parts[1]
 
-        print cfg_dict
-        """
+    def o2cb_list_clusters(self):
+        cmd = "o2cb list-clusters\n"
+        out = self.execute_command(cmd, 1)
+        out = self.strip_command(cmd, out)
+        out = self.strip_prompt(out)
+        return out
+
+    def o2cb_list_cluster(self, cluster_name):
+        cmd = "o2cb list-cluster %s\n" % cluster_name
+        out = self.execute_command(cmd, 1)
+        out = self.strip_command(cmd, out)
+        out = self.strip_prompt(out)
+        cluster = ClusterO2CB(out)
+        
+        return cluster
 
     def enable_privileged_commands(self):
         assert(self._session is not None)

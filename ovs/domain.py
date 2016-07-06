@@ -25,6 +25,11 @@ class DomainInfo(object):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True,
                           indent=4)
 
+    def print_brief(self):
+        pass
+
+    def print_detailed(self):
+        pass
 
 class FactoryDevice():
     @staticmethod

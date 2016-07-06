@@ -1,7 +1,7 @@
 import string
 import json
 
-class ClusterConfigInfo(object):
+class ClusterConfigFileInfo(object):
     def __init__(self, cfg_info):
         assert(isinstance(cfg_info, basestring))
         self.clusters = []
@@ -66,3 +66,42 @@ class ClusterConfigInfo(object):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True,
                           indent=4)
 
+class ClusterO2CB(object):
+    def __init__(self, cluster_info):
+        assert(isinstance(cluster_info, basestring))
+        self.cluster = {}
+        self.heartbeats = []
+        self.nodes = []
+        self.parse_config_info(cluster_info)
+
+    def parse_config_info(self, cfg_info):
+        #print cfg_info
+        lines = cfg_info.split("\n")
+        # print lines
+        for line in lines:
+            #line = line.split('#')[0].strip()
+            if not line:
+                continue
+            elif line.startswith('node:'):
+                d = {}
+                self.nodes.append(d)
+            elif line.startswith('cluster:'):
+                d = {}
+                self.cluster = d
+            elif line.startswith('heartbeat:'):
+                d = {}
+                self.heartbeats.append(d)
+            else:
+                parts = map(string.strip, line.split('='))
+                if len(parts) == 2 and parts[0]:
+                    d[parts[0]] = parts[1]
+    
+    def to_json(self):
+        """ Returns JSON representation of this object. """
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True,
+                          indent=4)
+    
+    
+    
+    
+    

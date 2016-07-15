@@ -595,11 +595,6 @@ else:
             parser.EndElementHandler = target.end
             parser.CharacterDataHandler = target.data
             encoding = None
-            """
-            # START - GSF changes
-            print("*** GSF-3-1 parser=%s,target%s" % (self._parser, self._target))
-            # END - GSF changes
-            """
             if not parser.returns_unicode:
                 encoding = "utf-8"
             target.xml(encoding, None)
@@ -826,13 +821,6 @@ class Unmarshaller:
     # that's perfectly ok.
 
     def __init__(self, use_datetime=0):
-        """
-        # START - GSF changes
-        import traceback
-        s = traceback.format_stack()
-        print("***GSF-0 %s" % ("".join(s)))
-        # END - GSF changes
-        """
         self._type = None
         self._stack = []
         self._marks = []
@@ -1089,7 +1077,6 @@ def getparser(use_datetime=0):
             parser = ExpatParser(target)
         else:
             parser = SlowParser(target)
-    # print("GSF-111-0 parser=%s, target=%s" % (repr(parser), repr(target)))
     return parser, target
 
 ##
@@ -1265,12 +1252,7 @@ class Transport:
         except AttributeError:
             sock = None
 
-        # START GSF TMP
-        r = self._parse_response(h.getfile(), sock)
-        print("*** GSF88-1 %s" % type(r))
-        return r
-        # END GSF TMP
-        # return self._parse_response(h.getfile(), sock)
+        return self._parse_response(h.getfile(), sock)
 
     ##
     # Create parser.
@@ -1395,10 +1377,6 @@ class Transport:
 
         p, u = self.getparser()
 
-        # START - GSF changes
-        #print("*** GSF-2-1 file=%s, sock=%s" % (file, sock))
-        #print("*** GSF-2-2 p=%s, u=%s" % (p, u))
-        # END - GSF changes
         while 1:
             if sock:
                 response = sock.recv(1024)
@@ -1408,13 +1386,11 @@ class Transport:
                 break
             if self.verbose:
                 print "body:", repr(response)
-            # print("*** GSF-2-3 resp=%s" % response)
             p.feed(response)
 
         file.close()
         p.close()
 
-        print("*** GSF88-2 %s" % type(u))
         return u.close()
 
 ##
@@ -1514,14 +1490,6 @@ class ServerProxy:
             request,
             verbose=self.__verbose
             )
-
-        """
-        # START - GSF changes
-        # print("*** GSF-1 response=%s" % response)
-        # END - GSF changes
-        if len(response) == 1:
-            response = response[0]
-        """
 
         return response
 

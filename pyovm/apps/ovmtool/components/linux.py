@@ -1,3 +1,4 @@
+import time
 import json
 import xmltodict
 
@@ -9,15 +10,24 @@ class Linux(object):
         self.srv_raw_data = None
         self.server = None
         self.hardware = None
-        self.phy_luns = None
-        self.mounted_fs = None
-        self.repos = None
-        self.pkgs = None
+
+        self.phy_luns = []
+        self.scsi_disks = []
+        self.scsi_targets = []
+
+        self.mounted_fs = []
+        self.repos = {}
+
+        self.pkgs_installed = []
+        self.pkgs_updates = []
+
+        self.sys_disk_space = None
+        
         self.boot_time = None
         self.datetime = None
         self.timezone = None
         self.log = None
-        
+
         """
         'discover_server',                         !!!
         'discover_hardware',                       !!!
@@ -65,10 +75,10 @@ class Linux(object):
                     return self.server
                 else:
                     #print json.dumps(d, indent=4)
-                    raise Exception("Failed to parse data in response")
+                    raise Exception("Failed to parse data from response")
             else:
                 print json.dumps(r[0], indent=4)
-                raise Exception("Failed to parse data in response")
+                raise Exception("Failed to parse data from response")
         except Exception as e:
             print("[Linux] Error: %s" % repr(e))
 
@@ -90,41 +100,155 @@ class Linux(object):
                     return self.hardware
                 else:
                     #print json.dumps(d, indent=4)
-                    raise Exception("Failed to parse data in response")
+                    raise Exception("Failed to parse data from response")
             else:
                 print json.dumps(r[0], indent=4)
-                raise Exception("Failed to parse data in response")
+                raise Exception("Failed to parse data from response")
         except Exception as e:
             print("[Linux] Error: %s" % repr(e))
 
     def discover_physical_luns(self):
-        pass
+        """'discover_physical_luns'!!!"""
+        try:
+            r = self.conn.discover_physical_luns('',)
+            assert(isinstance(r, tuple))
+            if(isinstance(r[0], basestring)):
+                s='<?xml version'
+                if s in r[0]:
+                    d = xmltodict.parse(xml_input=r[0],
+                                        xml_attribs=True,
+                                        process_namespaces=True,
+                                        postprocessor=self.__xml_postprocessor)
+                    p1 = 'discover_physical_luns_result'
+                    p2 = 'scsi'
+                    p3 = 'disk'
+                    data = d[p1]
+                    scsi_disk_data = data.get(p2).get(p3)
+                    if scsi_disk_data:
+                        for item in scsi_disk_data:
+                            obj = SCSIDisc(item)
+                            self.scsi_disks.append(obj)
+                    p4 = 'iscsi_target'
+                    scsi_target_data = data.get(p4)
+                    if scsi_target_data:
+                        for item in scsi_target_data:
+                            obj = SCSITarget(item)
+                            self.scsi_targets.append(obj)
+                    
+                            #print json.dumps(item, indent=4)
+                else:
+                    #print json.dumps(d, indent=4)
+                    raise Exception("Failed to parse data from response")
+            else:
+                print json.dumps(r[0], indent=4)
+                raise Exception("Failed to parse data from response")
+        except Exception as e:
+            print("[Linux] Error: %s" % repr(e))
 
     def discover_mounted_file_systems(self):
-        pass
+        """'discover_mounted_file_systems'!!!"""
+        try:
+            r = self.conn.discover_mounted_file_systems("all")
+            assert(isinstance(r, tuple))
+            if(isinstance(r[0], basestring)):
+                s='<?xml version'
+                if s in r[0]:
+                    d = xmltodict.parse(xml_input=r[0],
+                                        xml_attribs=True,
+                                        process_namespaces=True,
+                                        postprocessor=self.__xml_postprocessor)
+                    p1 = 'discover_mounted_file_systems_result'
+                    p2 = 'filesystem'
+                    data = d[p1][p2]
+                    if(isinstance(data, list)):
+                        # print json.dumps(data, indent=4)
+                        for item in data:
+                            fs = MountedFileSystem(item)
+                            self.mounted_fs.append(fs)
+                        return self.mounted_fs
+                    else:
+                        raise Exception("Failed to parse data from response")
+                else:
+                    #print json.dumps(d, indent=4)
+                    raise Exception("Failed to parse data from response")
+            else:
+                print json.dumps(r[0], indent=4)
+                raise Exception("Failed to parse data from response")
+        except Exception as e:
+            print("[Linux] Error: %s" % repr(e))
 
     def package_get_repositories(self):
-        pass
+        """'package_get_repositories'!!!"""
+        try:
+            r = self.conn.package_get_repositories()
+            assert(isinstance(r, tuple))
+            if(isinstance(r[0], dict)):
+                self.repos = Repositories(r[0])
+                return self.repos
+            else:
+                raise Exception("Failed to parse data from response")
+        except Exception as e:
+            print("[Linux] Error: %s" % repr(e))
 
-    def package_list(self):
-        pass
+    def package_list(self, scope):
+        """'package_list'!!!"""
+        assert(scope is 'installed' or scope is 'updates')
+        try:
+            r = self.conn.package_list(scope)
+            assert(isinstance(r, tuple))
+            if(isinstance(r[0], list)):
+                for e in r[0]:
+                    pkg = Package(e)
+                    if scope is 'installed':
+                        self.pkgs_installed.append(pkg)
+                    else:
+                        self.pkgs_updates.append(pkg)
+            else:
+                raise Exception("Failed to parse data from response")
+        except Exception as e:
+            print("[Linux] Error: %s" % repr(e))
 
     def get_system_disk_space(self):
-        pass
+        """'get_system_disk_space'!!!"""
+        try:
+            r = self.conn.get_system_disk_space()
+            assert(isinstance(r, tuple))
+            if(isinstance(r[0], dict)):
+                self.sys_disk_space = DiskSpace(r[0])
+                return self.sys_disk_space
+            else:
+                raise Exception("Failed to parse data from response")
+        except Exception as e:
+            print("[Linux] Error: %s" % repr(e))
 
     def get_last_boot_time(self):
+        """'get_last_boot_time'!!!"""
+        try:
+            r = self.conn.get_last_boot_time()
+            assert(isinstance(r, tuple))
+            if(isinstance(r[0], dict)):
+                self.boot_time = BootTime(r[0])
+                return self.boot_time
+            else:
+                raise Exception("Failed to parse data from response")
+        except Exception as e:
+            print("[Linux] Error: %s" % repr(e))
         pass
 
     def get_ntp(self):
+        """'get_ntp'!!!"""
         pass
 
     def get_datetime(self):
+        """'get_datetime'!!!"""
         pass
 
     def get_timezone(self):
+        """'get_timezone'!!!"""
         pass
 
     def get_log(self):
+        """'get_log'!!!"""
         pass
 
     def to_json(self):
@@ -153,35 +277,73 @@ class Hardware(Linux):
             setattr(self, k, v)
         #print self.to_json()
 
-class PhysicalLuns(Linux):
+'''
+class PhysicalLUNs(Linux):
     """'discover_physical_luns'!!!"""
     def __init__(self):
+        self.scsi_disks = []
         pass
+'''
 
-class MountedFileSystems(Linux):
+class SCSIDisc(Linux):
+    """'discover_physical_luns'!!!"""
+    def __init__(self, data):
+        for k, v in data.items():
+            setattr(self, k, v)
+        print self.to_json()
+
+class SCSITarget(Linux):
+    """'discover_physical_luns'!!!"""
+    def __init__(self, data):
+        for k, v in data.items():
+            setattr(self, k, v)
+        print self.to_json()
+
+class MountedFileSystem(Linux):
     """'discover_mounted_file_systems'!!!"""
-    def __init__(self):
-        pass
+    def __init__(self, data):
+        for k, v in data.items():
+            setattr(self, k, v)
+        #print self.to_json()
 
 class Repositories(Linux):
     """'package_get_repositories'!!!"""
-    def __init__(self):
-        pass
+    def __init__(self, data):
+        for k, v in data.items():
+            setattr(self, k, v)
+        #print self.to_json()
 
-class Packages(Linux):
+class Package(Linux):
     """'package_list'!!!"""
-    def __init__(self):
-        pass
+    def __init__(self, data):
+        for k, v in data.items():
+            setattr(self, k, v)
+        #print self.to_json()
 
 class DiskSpace(Linux):
     """'get_system_disk_space'!!!"""
-    def __init__(self):
-        pass
+    def __init__(self, data):
+        for k, v in data.items():
+            setattr(self, k, v)
+        #print self.to_json()
 
 class BootTime(Linux):
     """'get_last_boot_time'!!!"""
-    def __init__(self):
-        pass
+    def __init__(self, data):
+        for k, v in data.items():
+            setattr(self, k, v)
+        #print self.to_json()
+
+    def boot_time(self):
+        if self.last_boot_time:
+            return time.strftime('%m/%d/%Y %H:%M:%S',
+                                 time.localtime(float(self.last_boot_time)))
+
+    def current_time(self):
+        if self.local_time:
+            return time.strftime('%m/%d/%Y %H:%M:%S',
+                                 time.localtime(float(self.local_time)))
+
 
 class NTP(Linux):
     """'get_ntp'!!!"""

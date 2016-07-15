@@ -1,254 +1,247 @@
 #!/usr/bin/env python
 
+import sys
+import os
+#import ordereddict
+import yaml
+
+from collections import OrderedDict
+from argparse import ArgumentParser
+from argparse import RawDescriptionHelpFormatter
+
+from components.linux import Linux
+
+__all__ = []
+__version__ = 0.1
+__date__ = '2016-07-14'
+__updated__ = '2016-07-14'
+
+DEBUG = 1
+TESTRUN = 0
+PROFILE = 0
+
+class OVMCfg():
+    """
+    Placeholder for attributes that are necessary for
+    communication with OVS server(s)
+    """
+
+    def __init__(self, host, port, name, pswd):
+        self.host = host
+        self.port = port
+        self.admin_name = name
+        self.admin_pswd = pswd
+
+    def to_string(self):
+        return "%s:%s" % (self.host, self.port)
+
+class CLIError(Exception):
+    """Generic exception to raise and log different fatal errors."""
+    def __init__(self, msg):
+        super(CLIError).__init__(type(self))
+        self.msg = "%s" % msg
+    def __str__(self):
+        return self.msg
+    def __unicode__(self):
+        return self.msg
+
+class CLIParser(ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        super(CLIParser, self).__init__(*args, **kwargs)
+        #ArgumentParser.__init__(self, *args, **kwargs)
+
+    def error(self, message): 
+        s = "\nError: %s\n\n%s" % (message, self.format_usage())
+        raise CLIError(s)
+
+class CLIExecuter(object):
+    """ CLI commands parser and executer """
+    def __init__(self, *cmd_opts):
+        self.prog = 'ovm'
+        usage_str = ("%(prog)s [-h] [-C <path>] <command> [<args>]\n"
+                     "('%(prog)s -h' for details)\n"
+                     "\nAvailable commands are:\n")
+        cmds_str = ""
+        for k, v in show_cmds.items():
+            cmds_str += "   %-15s - %s\n" % (k, v[1])
+        usage_str += "%s" % cmds_str
+
+        parser = CLIParser(
+            prog=self.prog,
+            description=("Command line tool for interaction with "
+                         "OpenFlow Controller"),
+            usage=usage_str
+            )
+
+        parser.add_argument('-C', metavar="<path>",
+                            dest='cfg_file',
+                            help="path to the OVM configuration file "
+                                 "(default is './ovm.yml')",
+                            default="./ovm.yml")
+        parser.add_argument('command', help='command to be executed')
+
+        args, remaining_args = parser.parse_known_args()
+        
+        # Get attributes from configuration file
+        try:
+            self.cfg = self.get_cfg(args.cfg_file)
+        except (IOError):
+            s = "\nError: %s\n" % ("Cannot find configuration file")
+            raise CLIError(s)
+        except (KeyError):
+            s = "\nError: %s\n" % ("Malformed data in configuration file")
+            raise CLIError(s)
+
+        # Execute the command
+        try:
+            show_cmds[args.command][0](self.cfg, remaining_args)
+        except KeyError:
+            s = "\nError: %s '%s'\n\n%s" % ("unknown command",
+                                            args.command,
+                                            parser.format_usage())
+            raise CLIError(s)
+
+    def get_cfg(self, path):
+        with open(path, 'r') as f:
+            obj = yaml.load(f)
+        d = {}
+        for k, v in obj.iteritems():
+            d[k] = v
+
+        host = d['host']
+        port = d['port']
+        name = d['name']
+        pswd = d['pswd']
+        cfg = OVMCfg(host, port, name, pswd)
+        return cfg
+
+def show_ovs(dst, *args):
+    linux = Linux(dst)
+    srv = linux.discover_server()
+    print srv.to_json()
+
+def show_hardware(dst, *args):
+    linux = Linux(dst)
+    hw = linux.discover_hardware()
+    print hw.to_json()
+
+def show_physical_luns(dst, *args):
+    linux = Linux(dst)
+    linux.discover_physical_luns()
+    if linux.scsi_disks:
+        for e in linux.scsi_disks:
+            print e.to_json()
+    if linux.scsi_targets:
+        for e in linux.scsi_targets:
+            print e.to_json()
+
+def show_mounted_fs(dst, *args):
+    linux = Linux(dst)
+    nfs = linux.discover_mounted_file_systems()
+    for item in nfs:
+        print("%s" % item.to_json())
+
+def show_repos(dst, *args):
+    linux = Linux(dst)
+    repos = linux.package_get_repositories()
+    print repos.to_json()
+
+def show_pkgs(dst, *args):
+    linux = Linux(dst)
+    linux.package_list('installed')
+    if linux.pkgs_installed:
+        for pkg in linux.pkgs_installed:
+            print pkg.to_json()
+    linux.package_list('updates')
+    if linux.pkgs_updates:
+        for pkg in linux.pkgs_installed:
+            print pkg.to_json()
+
+def show_disk_space(dst, *args):
+    linux = Linux(dst)
+    ds = linux.get_system_disk_space()
+    print ds.to_json()
+
+def show_boot_time(dst, *args):
+    linux = Linux(dst)
+    bt = linux.get_last_boot_time()
+    print("\n").strip()
+    print("  Current Time  : %s" % bt.current_time())
+    print("  Last Boot Time: %s" % bt.boot_time())
+    print("\n").strip()
+
+def show_ntp(dst, *args):
+    linux = Linux(dst)
+    ntp = linux.get_ntp()
+    print ntp.to_json()
+
+def show_time(dst, *args):
+    linux = Linux(dst)
+    t = linux.get_datetime()
+    print t.to_json()
+
+def show_timezone(dst, *args):
+    linux = Linux(dst)
+    tz = linux.get_timezone()
+    print tz.to_json()
+
+def show_log(dst, *args):
+    linux = Linux(dst)
+    log = linux.get_log()
+    print log.to_json()
+
+
+def show_network(dst, *args):
+    print("show_network")
+
+def show_eth(dst, *args):
+    print("show_eth")
+
+def show_infiniband(dst, *args):
+    print("show_infiniband")
+
+def show_bonding(dst, *args):
+    print("show_bonding")
+
+def show_bridge(dst, *args):
+    print("show_bridge")
+
+def show_cluster(dst, *args):
+    print("show_cluster")
+
+show_cmds = OrderedDict((
+    ('show-ovs', [show_ovs, 'Show OVS server generic info']),
+    ('show-hardware', [show_hardware, 'Show hardware info']),
+    ('show-luns', [show_physical_luns, 'Show LUNs info']),
+    ('show-nfsmnt', [show_mounted_fs, 'Show mounted file systems']),
+    ('show-yum', [show_repos, 'Show YUM repositories']),
+    ('show-pkgs', [show_pkgs, 'Show installed packages']),
+    ('show-disk-space', [show_disk_space, 'Show system disk space']),
+    ('show-boot-time', [show_boot_time, 'Show last boot time']),
+    ('show-ntp', [show_ntp, 'Show NTP info']),
+    ('show-time', [show_time, 'Show date and time']),
+    ('show-tz', [show_timezone, 'Show timezone']),
+    ('show-log', [show_log, 'Display log content'])
+))
+
 """
-command_ssh.py
+'show-net': show_network,
+'show-eth': show_eth,
+'show-ib': show_infiniband,
+'show-bond': show_bonding,
+'show-bridge': show_bridge,
+'show-cluster': show_cluster,
 """
 
-import time
-import json
-from ovs.factory import OVSFactory
-
-# OVS specific info
-server = {
-    'host': 'ovs233',
-    'connection': 'ssh',
-    'port': 22,
-    'timeout': 3,
-    'username': 'root',
-    'password': 'oracle',
-    'verbose': False
-}
-
-
-def show_domain_info(server, dom_name):
-    debug = False
+if __name__ == "__main__":
     try:
-        ovs = OVSFactory.create(server)
-        #ovs.connect()
-        if(ovs.connected()):
-            dom = ovs.get_domain_info(dom_name)
-            if debug:
-                print dom.to_json()
-            else:
-                print("\n").strip()
-                print(" OVS Server '%s'\n" % server['host'])
-                print("%s" % dom.brief_str(indent=3))
-
-            ovs.disconnect()
-    except(Exception) as e:
-        print "!!!Error[show_domain]: %s\n" % repr(e)
-        raise e
-
-def show_domains_info(server, brief=True):
-    debug = False
-    try:
-        ovs = OVSFactory.create(server)
-        # ovs.connect()
-        if(ovs.connected()):
-            domains = ovs.get_domains_info()
-            # print type(domains)
-            if debug:
-                for dom in domains:
-                    print "<<<<<<<<<<<<<<<"
-                    print dom.to_json()
-                    print ">>>>>>>>>>>>>>>"
-            else:
-                print("\n").strip()
-                print(" OVS Server '%s'\n" % server['host'])
-                print("   Domains Info\n")
-                for dom in domains:
-                    print("\n").strip()
-                    print("%s" % dom.brief_str(indent=5))
-                
-                """
-                print("    %-3s %-32s %-6s %-5s %-10s" %
-                      ("ID", "Name", "Memory", "VCPUs", "Total CPU Time (secs)"))
-                print("    %s %s %s %s %s" %
-                      ("-"*3, "-"*32, "-"*6, "-"*5, "-"*21))
-                for dom in domains:
-                    print("    %-3s %-32s %-6s %-5s %-10s" %
-                          (dom.domid, dom.name,
-                           dom.memory, dom.vcpus, dom.cpu_time))
-                print("\n")
-                """
-
-            ovs.disconnect()
-    except(Exception) as e:
-        print "!!!Error: %s\n" % repr(e)
-        raise e
-        #assert(False)
-        return None
-
-"""
-def show_domains_list(server):
-    try:
-        ovs = OVSFactory.create(server)
-        # ovs.connect()
-        if(ovs.connected()):
-            domains = ovs.get_domains()
-
-            print("\n").strip()
-            print(" Domains Info (%s) \n" % server['host'])
-            print("  %-3s %-32s %-6s %-5s %-10s" %
-                  ("ID", "Name", "Memory", "VCPUs", "Time"))
-            print("  %s %s %s %s %s" % ("-"*3, "-"*32, "-"*6, "-"*5, "-"*10))
-            for dom in domains:
-                print("  %-3s %-32s %-6s %-5s %-10s" %
-                      (dom.id, dom.name, dom.mem, dom.vcpus, dom.time))
-            print("\n")
-
-            ovs.disconnect()
-    except(Exception) as e:
-        print "!!!Error: %s\n" % repr(e)
-        raise e
-"""
-
-def show_cluster_cfg(server):
-    try:
-        ovs = OVSFactory.create(server)
-        if(ovs.connected()):
-            cluster_cfg_info = ovs.get_cluster_cfg_info()
-            # print "!!! cluster_cfg=%s" % cfg.to_json()
-            print("\n").strip()
-            print(" OVS Server '%s'\n" % server['host'])
-            print("   Cluster Configuration Info")
-            names = cluster_cfg_info.get_cluster_names()
-            for name in names:
-                print("\n").strip()
-                print("    Cluster '%s'\n" % name)
-                print("       Nodes Count: %s" %
-                       cluster_cfg_info.get_node_count(name))
-                print("       Heartbeat Mode: %s" % 
-                      cluster_cfg_info.get_hb_mode(name))
-                print("\n").strip()
-
-                print("%-11s %-16s %-15s %-10s" %
-                      ("       Node Number", "Node Name",
-                       "IPv4 Address", "IPv4 Port"))
-                print("       %s %s %s %s" %
-                      ("-"*11, "-"*16, "-"*15, "-"*10))
-                nodes = cluster_cfg_info.get_nodes(name)
-                for node in nodes:
-                    print("       %-11s %-16s %-15s %-10s" %
-                          (node['number'], node['name'],
-                           node['ip_address'], node['ip_port']))
-                print("\n").strip()
-                print("       %-52s" % ("Heartbeat Region UUID"))
-                print("       %s" % ("-"*52))
-                hbs = cluster_cfg_info.get_heartbeats(name)
-                for hb in hbs:
-                    print("       %-52s" % hb['region'])
-
-                print("\n").strip()
-
-            ovs.disconnect()
-    except(Exception) as e:
-        print "!!!Error: %s\n" % repr(e)
-        raise e
-
-def show_cluster_names(server):
-    try:
-        ovs = OVSFactory.create(server)
-        if(ovs.connected()):
-            l = ovs.o2cb_list_clusters()
-            print l
-            
-            ovs.disconnect()
-    except(Exception) as e:
-        print "!!!Error: %s\n" % repr(e)
-        raise e
-
-def show_o2cb_clusters(server):
-    try:
-        ovs = OVSFactory.create(server)
-        if(ovs.connected()):
-            names = ovs.o2cb_list_clusters().split("\n")
-            print("\n").strip()
-            print(" OVS Server '%s'\n" % server['host'])
-            print("   O2CB Clusters Info")
-            for name in names:
-                #print name
-                cluster = ovs.o2cb_list_cluster(name)
-                
-                print("\n").strip()
-                print("     Cluster '%s'\n" % name)
-                print("       Nodes Count: %s" %
-                       cluster.cluster['node_count'])
-                print("       Heartbeat Mode: %s" % 
-                      cluster.cluster['heartbeat_mode'])
-                print("\n").strip()
-
-                print("%-11s %-16s %-15s %-10s" %
-                      ("       Node Number", "Node Name",
-                       "IP Address", "Port"))
-                print("       %s %s %s %s" %
-                      ("-"*11, "-"*16, "-"*15, "-"*10))
-                for node in cluster.nodes:
-                    print("       %-11s %-16s %-15s %-10s" %
-                          (node['number'], node['name'],
-                           node['ip_address'], node['ip_port']))
-                print("\n").strip()
-                print("       %-52s" % ("Heartbeat Region UUID"))
-                print("       %s" % ("-"*52))
-                for hb in cluster.heartbeats:
-                    print("       %-52s" % hb['region'])
-
-                print("\n").strip()
-
-            ovs.disconnect()
-    except(Exception) as e:
-        print "!!!Error: %s\n" % repr(e)
-        raise e
-
-def show_o2cb_cluster(server, cluster_name):
-    try:
-        ovs = OVSFactory.create(server)
-        if(ovs.connected()):
-            cluster = ovs.o2cb_list_cluster(cluster_name)
-            print("\n").strip()
-            print(" OVS Server '%s'\n" % server['host'])
-            #print("\n").strip()
-            print("   Cluster '%s'\n" % cluster_name)
-            print("     Nodes Count: %s" %
-                   cluster.cluster['node_count'])
-            print("     Heartbeat Mode: %s" % 
-                  cluster.cluster['heartbeat_mode'])
-            print("\n").strip()
-
-            print("%-11s %-16s %-15s %-10s" %
-                  ("     Node Number", "Node Name",
-                   "IP Address", "Port"))
-            print("     %s %s %s %s" %
-                  ("-"*11, "-"*16, "-"*15, "-"*10))
-            for node in cluster.nodes:
-                print("     %-11s %-16s %-15s %-10s" %
-                      (node['number'], node['name'],
-                       node['ip_address'], node['ip_port']))
-            print("\n").strip()
-            print("     %-52s" % ("Heartbeat Region UUID"))
-            print("     %s" % ("-"*52))
-            for hb in cluster.heartbeats:
-                print("     %-52s" % hb['region'])
-
-            print("\n").strip()
-            
-            ovs.disconnect()
-    except(Exception) as e:
-        print "!!!Error: %s\n" % repr(e)
-        raise e
-
-def main():
-    #show_cluster_names(server)
-    #show_cluster_cfg(server)
-    #show_o2cb_clusters(server)
-    #show_o2cb_cluster(server, "1b277644540ad2d6")
-    # show_domains_info(server)
-    show_domain_info(server, "0004fb00000600007c522c7d71072a52")
-    # return
-    
-    
-    #show_domains_list(server)
-
-if __name__ == '__main__':
-    main()
-    
+        CLIExecuter(sys.argv)
+    except (CLIError) as e:
+        print "%s" % e
+        exit(1)
+    except KeyboardInterrupt:
+        ### handle keyboard interrupt ###
+        exit(0)
+    except (Exception) as e:
+        print "%s" % repr(e)
+        exit(1)

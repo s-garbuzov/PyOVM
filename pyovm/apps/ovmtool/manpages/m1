@@ -1,0 +1,64 @@
+.TH script-terminals.py 1 "May 19, 2015" "version 0.1" "TERMINAL USER COMMANDS
+.SH script-terminals.py
+script-terminals.py  
+\− Utility to start and setup Linked Terminals
+.SH SYNOPSIS
+.B script-terminals.py
+[-h] [-b SNAPSHOT_ID] [-s SIZE] [-u UTOKEN]
+                           [-a ATOKEN] [-c CREDS] [-x SCRIPT] [-m METHOD]
+                           [-n NAME] [-k SSH_KEY_FILE] [-p PORTS]
+                           [-t THREADING]
+                           quantity
+.SH DESCRIPTION
+This utility will help you to start linked Terminals from the command line.  
+.PP
+You will be able to  
+provide a initialization script to setup automated clustered environments if needed.  
+You can also instruct the script to be executed in multithreading mode.  
+.SH OPTIONS
+.TP
+positional arguments:  
+  quantity              How many nodes will have your deploy
+.TP
+optional arguments:  
+  -h, --help            show this help message and exit
+  -b SNAPSHOT_ID, --snapshot_id SNAPSHOT_ID
+                        Base Snapshot ID. Default is [Ubuntu]
+  -s SIZE, --size SIZE  micro, mini, small, [medium], xlarge.. etc
+  -u UTOKEN, --utoken UTOKEN
+                        Your user token
+  -a ATOKEN, --atoken ATOKEN
+                        Your access token
+  -c CREDS, --creds CREDS
+                        A credentials json file
+  -x SCRIPT, --script SCRIPT
+                        A script file to be executed in the new Terminals.
+                        With ssh method you can also use a binary executable.
+                        If a script is not provided, the terminals will be
+                        created and ssh keys installed on them.
+  -m METHOD, --method METHOD
+                        [ssh], startup or startup_key
+  -n NAME, --name NAME  The name of your Terminal
+  -k SSH_KEY_FILE, --ssh_key_file SSH_KEY_FILE
+                        Use your own ssh key instead of create a new one - Use
+                        your private key name
+  -p PORTS, --ports PORTS
+                        List of open ports to open between Terminals, csv.
+  -t THREADING, --threading THREADING
+                        [single] or multi - Multithreading is quick but
+                        requires non-interactive scripts
+.SH EXAMPLE
+.TP
+Create 3 new cluster nodes, opening ports 6379 and 16379 between them, named with prefix 'Node'  
+and using as startup script the file 'script.sh':  
+.B # ./script-terminals.py
+\-n Node -s medium -x script.sh -p 6379,16379 3
+.PP
+.SH OUTPUT
+Returns 0 if everything went fine, or 1 if something failed.  
+.SH SEE ALSO
+python(1)  
+.SH AUTHOR
+Enrique Conci, e@cloudlabs.io  
+.SH COPYRIGHT
+Copyright (c) 2015 Cloudlabs INC.

@@ -1,0 +1,32 @@
+##############################################################################
+#
+#    This configuration file contains information used by the 'ovmtool'
+#    sample application for communication with a remote Controller.
+#
+#    Following configuration parameters are required:
+#
+#    host - Name or IP address of destination OVS server
+#    port - TCP/UDP destination port number on the Controller
+#    name - administrator user name
+#    pswd - administrator user password
+#
+#    Example of configuration:
+#
+#    ipaddr: 192.0.2.168
+#    port: 8899
+#    name: "name"
+#    pswd: "password"
+#
+#    NOTE: Please do not publish this file to the repository with the
+#          changes that are specific to your local network setup
+#
+##############################################################################
+
+# Set the following parameters according to your local network
+# environment setup (see NOTE in above)
+
+# Controller
+host: 192.0.2.168
+port: 8899
+name: "name"
+pswd: "password"

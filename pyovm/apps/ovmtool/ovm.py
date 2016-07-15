@@ -32,31 +32,7 @@ def show_domain_info(server, dom_name):
             else:
                 print("\n").strip()
                 print(" OVS Server '%s'\n" % server['host'])
-                print("   Domain Info - %s\n" % dom.name)
-                print("     ID       : %s" % dom.domid)
-                print("     Name     : %s" % dom.name)
-                print("     Pool Name: %s" % dom.pool_name)
-                
-                print("\n").strip()
-                print("     %-10s %-10s %-5s %-21s %-20s" %
-                      ("Memory", "Max Memory", "VCPUs",
-                       "Total CPU Time (secs)", "Start Time"))
-                print("     %s %s %s %s %s" %
-                      ("-"*10, "-"*10, "-"*5, "-"*21, "-"*20))
-                print("     %-10s %-10s %-5s %-21s %-20s" %
-                      (dom.memory, dom.maxmem,
-                       dom.vcpus, dom.cpu_time,
-                       time.strftime('%m/%d/%Y %H:%M:%S',
-                                     time.localtime(float(dom.start_time)))))
-                print("\n").strip()
-                
-                devices = dom.devices
-                for device in devices:
-                    print("%s" % device.brief_str(indent=4)) 
-                
-                images = dom.images
-                for image in images:
-                    print("%s" % image.brief_str(indent=4))
+                print("%s" % dom.brief_str(indent=3))
 
             ovs.disconnect()
     except(Exception) as e:
@@ -80,6 +56,11 @@ def show_domains_info(server, brief=True):
                 print("\n").strip()
                 print(" OVS Server '%s'\n" % server['host'])
                 print("   Domains Info\n")
+                for dom in domains:
+                    print("\n").strip()
+                    print("%s" % dom.brief_str(indent=5))
+                
+                """
                 print("    %-3s %-32s %-6s %-5s %-10s" %
                       ("ID", "Name", "Memory", "VCPUs", "Total CPU Time (secs)"))
                 print("    %s %s %s %s %s" %
@@ -89,6 +70,7 @@ def show_domains_info(server, brief=True):
                           (dom.domid, dom.name,
                            dom.memory, dom.vcpus, dom.cpu_time))
                 print("\n")
+                """
 
             ovs.disconnect()
     except(Exception) as e:
@@ -97,6 +79,7 @@ def show_domains_info(server, brief=True):
         #assert(False)
         return None
 
+"""
 def show_domains_list(server):
     try:
         ovs = OVSFactory.create(server)
@@ -118,6 +101,7 @@ def show_domains_list(server):
     except(Exception) as e:
         print "!!!Error: %s\n" % repr(e)
         raise e
+"""
 
 def show_cluster_cfg(server):
     try:
@@ -258,12 +242,12 @@ def main():
     #show_cluster_cfg(server)
     #show_o2cb_clusters(server)
     #show_o2cb_cluster(server, "1b277644540ad2d6")
-    show_domains_info(server)
-    # show_domain_info(server, "0004fb00000600007c522c7d71072a52")
+    # show_domains_info(server)
+    show_domain_info(server, "0004fb00000600007c522c7d71072a52")
     # return
     
     
-    # show_domains_list(ovs_info)
+    #show_domains_list(server)
 
 if __name__ == '__main__':
     main()

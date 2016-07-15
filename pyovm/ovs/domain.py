@@ -1,5 +1,6 @@
 import json
-
+import time
+from ovs.base import OVMServer
 
 class DomainInfo(object):
     def __init__(self, info_sxp):
@@ -25,10 +26,45 @@ class DomainInfo(object):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True,
                           indent=4)
 
-    def print_brief(self):
-        pass
+    def brief_str(self, indent=0):
+        if self.domid == "0":
+            return ""
+        
+        s=("%sDomain Info - %s\n"
+           "\n"
+           "%sID       : %s\n"
+           "%sName     : %s\n"
+           "%sPool Name: %s\n"
+           "\n"
+           "%s%-10s %-10s %-5s %-21s %-20s\n"
+           "%s%s %s %s %s %s\n"
+           "%s%-10s %-10s %-5s %-21s %-20s"
+           ) % \
+           (' '*indent, self.name,
+            ' '*indent, self.domid,
+            ' '*indent, self.name,
+            ' '*indent, self.pool_name,
+            ' '*indent, "Memory", "Max Memory", "VCPUs",
+                        "Total CPU Time (secs)", "Start Time",
+            ' '*indent, "-"*10, "-"*10, "-"*5, "-"*21, "-"*20,
+            ' '*indent, self.memory, self.maxmem,
+                        self.vcpus, self.cpu_time,
+                        time.strftime('%m/%d/%Y %H:%M:%S',
+                                time.localtime(float(self.start_time)))
+            )
+           
+        dev_str = "\n"
+        for device in self.devices:
+            dev_str += "\n" + device.brief_str(indent)
+            #print("%s" % device.brief_str(indent=4)) 
+        
+        img_str = ""
+        for image in self.images:
+            img_str += "\n" + image.brief_str(indent)
 
-    def print_detailed(self):
+        return (s + dev_str + img_str)
+
+    def detailed_str(self):
         pass
 
 class FactoryDevice():
@@ -57,6 +93,9 @@ class Device(object):
         self.type = info_sxp[0]
         for (k,v) in info_sxp[1:]:
             setattr(self, k, v)
+            
+    def brief_str(self, indent=0):
+        return ""
 
     def to_json(self):
         """ Returns JSON representation of this object. """
@@ -69,9 +108,9 @@ class DeviceVif(Device):
 
     def brief_str(self, indent=0):
         s=("%sDevice: %s\n"
-           "  %sMAC Address: %s\n"
-           "  %sBridge Name: %s\n"
-           "  %sScript: %s\n") % (' '*indent, self.type,
+           "%sMAC Address: %s\n"
+           "%sBridge Name: %s\n"
+           "%sScript: %s\n") % (' '*indent, self.type,
                                   ' '*indent, self.mac,
                                   ' '*indent, self.bridge,
                                   ' '*indent, self.script)
@@ -83,7 +122,7 @@ class DeviceConsole(Device):
 
     def brief_str(self, indent=0):
         s=("%sDevice: %s\n"
-           "  %sProtocol: %s\n") % (' '*indent, self.type,
+           "%sProtocol: %s\n") % (' '*indent, self.type,
                                     ' '*indent, self.protocol)
         return s
 
@@ -93,8 +132,8 @@ class DeviceVbd(Device):
 
     def brief_str(self, indent=0):
         s=("%sDevice: %s\n"
-           "  %sBootable: %s\n"
-           "  %sLocation: %s\n") % (' '*indent, self.type,
+           "%sBootable: %s\n"
+           "%sLocation: %s\n") % (' '*indent, self.type,
                                     ' '*indent, self.bootable,
                                     ' '*indent, self.uname)
         return s
@@ -105,8 +144,8 @@ class DeviceVfb(Device):
 
     def brief_str(self, indent=0):
         s=("%sDevice: %s\n"
-           "  %sVNC: %s\n"
-           "  %sLocation: %s\n") % (' '*indent, self.type,
+           "%sVNC: %s\n"
+           "%sLocation: %s\n") % (' '*indent, self.type,
                                     ' '*indent, self.vnc,
                                     ' '*indent, self.location)
         return s
@@ -136,19 +175,31 @@ class Image(object):
                           indent=4)
     def brief_str(self, indent=0):
         s=("%sImage: %s\n"
+           "%sDevice Model: %s\n") % \
+            (' '*indent, self.type,
+             ' '*indent, self.device_model
+            )
+            
+        """
+        s=("%sImage: %s\n"
            "  %sOS Type: %s\n"
            "  %sVGA: %s\n"
            "  %sSerial: %s\n"
            "  %sVNC: %s\n"
            "  %sVNC Listen: %s\n"
-           "  %sDevice Model: %s\n"
-           "  %sLoader: %s\n") % (' '*indent, self.type,
-                                  ' '*indent, self.guest_os_type,
-                                   ' '*indent, self.stdvga,
-                                   ' '*indent, self.serial,
-                                   ' '*indent, self.vnc,
-                                   ' '*indent, self.vnclisten,
-                                   ' '*indent, self.device_model,
-                                   ' '*indent, self.loader)
+            "  %sDevice Model: %s\n"
+           "  %sLoader: %s\n") % \
+            (' '*indent, self.type,
+            ' '*indent, self.guest_os_type,
+            ' '*indent, self.stdvga,
+            ' '*indent, self.serial,
+            ' '*indent, self.vnc,
+            ' '*indent, self.vnclisten,
+            ' '*indent, self.device_model
+            ' '*indent, self.loader)
+        """
+            
+            
+           
         return s
 

@@ -178,12 +178,14 @@ def show_ntp(dst, *args):
 def show_time(dst, *args):
     linux = Linux(dst)
     t = linux.get_datetime()
-    print t.to_json()
+    print("\n").strip()
+    print("   %s" % (t.to_str()))
+    print("\n").strip()
 
 def show_timezone(dst, *args):
     linux = Linux(dst)
     tz = linux.get_timezone()
-    print tz.to_json()
+    #print tz.to_json()
 
 def show_log(dst, *args):
     linux = Linux(dst)

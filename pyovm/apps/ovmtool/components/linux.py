@@ -22,8 +22,11 @@ class Linux(object):
         self.pkgs_updates = []
 
         self.sys_disk_space = None
-        
+
         self.boot_time = None
+
+        self.ntp = None
+
         self.datetime = None
         self.timezone = None
         self.log = None
@@ -233,15 +236,33 @@ class Linux(object):
                 raise Exception("Failed to parse data from response")
         except Exception as e:
             print("[Linux] Error: %s" % repr(e))
-        pass
 
     def get_ntp(self):
         """'get_ntp'!!!"""
-        pass
+        try:
+            r = self.conn.get_ntp()
+            assert(isinstance(r, tuple))
+            if(isinstance(r[0], list)):
+                self.ntp = NTP(r[0])
+                return self.ntp
+            else:
+                raise Exception("Failed to parse data from response")
+        except Exception as e:
+            print("[Linux] Error: %s" % repr(e))
 
     def get_datetime(self):
         """'get_datetime'!!!"""
-        pass
+        try:
+            r = self.conn.get_datetime()
+            assert(isinstance(r, tuple))
+
+            if(isinstance(r[0], list)):
+                self.datetime = DateTime(r[0])
+                return self.datetime
+            else:
+                raise Exception("Failed to parse data from response")
+        except Exception as e:
+            print("[Linux] Error: %s" % repr(e))
 
     def get_timezone(self):
         """'get_timezone'!!!"""
@@ -344,16 +365,29 @@ class BootTime(Linux):
             return time.strftime('%m/%d/%Y %H:%M:%S',
                                  time.localtime(float(self.local_time)))
 
-
 class NTP(Linux):
     """'get_ntp'!!!"""
-    def __init__(self):
-        pass
+    def __init__(self, data):
+        self.ntp_servers = data[0]
+        self.local_time_source = data[1]
+        self.is_ntp_running = data[2]
+        #print self.to_json()
 
 class DateTime(Linux):
     """'get_datetime'!!!"""
-    def __init__(self):
-        pass
+    def __init__(self, data):
+        self.year = data[0]
+        self.month = data[1]
+        self.date = data[2]
+        self.hour = data[3]
+        self.min = data[4]
+        self.sec = data[5]
+        #print self.to_json()
+
+    def to_str(self):
+        s = "%s/%s/%s %s:%s:%s" % (self.month, self.date, self.year,
+                                   self.hour, self.min, self.sec)
+        return s
 
 class TimeZone(Linux):
     """'get_timezone'!!!"""

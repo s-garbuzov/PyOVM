@@ -13,7 +13,7 @@
 #    Example of configuration:
 #
 #    ipaddr: 192.0.2.168
-#    port: 8899
+#    port: 1234
 #    name: "name"
 #    pswd: "password"
 #
@@ -26,7 +26,7 @@
 # environment setup (see NOTE in above)
 
 # Controller
-host: 192.0.2.168
-port: 8899
+host: hostname
+port: 1234
 name: "name"
 pswd: "password"

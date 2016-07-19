@@ -57,7 +57,7 @@ class CLIParser(ArgumentParser):
 class CLIExecuter(object):
     """ CLI commands parser and executer """
     def __init__(self, *cmd_opts):
-        self.prog = 'ovm'
+        self.prog = 'ovs_show'
         usage_str = ("%(prog)s [-h] [-C <path>] <command> [<args>]\n"
                      "('%(prog)s -h' for details)\n"
                      "\nAvailable commands are:\n")
@@ -76,8 +76,8 @@ class CLIExecuter(object):
         parser.add_argument('-C', metavar="<path>",
                             dest='cfg_file',
                             help="path to the OVM configuration file "
-                                 "(default is './ovm.yml')",
-                            default="./ovm.yml")
+                                 "(default is './ovscfg.yml')",
+                            default="./ovscfg.yml")
         parser.add_argument('command', help='command to be executed')
 
         args, remaining_args = parser.parse_known_args()
@@ -175,23 +175,39 @@ def show_ntp(dst, *args):
     ntp = linux.get_ntp()
     print ntp.to_json()
 
-def show_time(dst, *args):
+def show_datetime(dst, *args):
     linux = Linux(dst)
     t = linux.get_datetime()
     print("\n").strip()
     print("   %s" % (t.to_str()))
     print("\n").strip()
+    #print t.to_json()
 
 def show_timezone(dst, *args):
     linux = Linux(dst)
     tz = linux.get_timezone()
+    print("\n").strip()
+    print("   %s" % (tz.to_str()))
+    print("\n").strip()
     #print tz.to_json()
 
 def show_log(dst, *args):
     linux = Linux(dst)
-    log = linux.get_log()
-    print log.to_json()
-
+    #l = ["messages", "dmesg"]
+    #logfile = 'messages'
+    #logfile = 'dmesg'
+    #logfile = 'xend'
+    logfile = 'ovs-agent'
+    
+    log = linux.get_log(logfile)
+    try:
+        #print("%s" % log.to_str())
+        print "%s" % log.errors()
+        #print "%s" % log.warnings()
+        #print "%s" % log.info()
+        #print "%s" % log.debug()
+    except (KeyboardInterrupt, SystemExit):
+        raise
 
 def show_network(dst, *args):
     print("show_network")
@@ -212,18 +228,18 @@ def show_cluster(dst, *args):
     print("show_cluster")
 
 show_cmds = OrderedDict((
-    ('show-ovs', [show_ovs, 'Show OVS server generic info']),
-    ('show-hardware', [show_hardware, 'Show hardware info']),
-    ('show-luns', [show_physical_luns, 'Show LUNs info']),
-    ('show-nfsmnt', [show_mounted_fs, 'Show mounted file systems']),
-    ('show-yum', [show_repos, 'Show YUM repositories']),
-    ('show-pkgs', [show_pkgs, 'Show installed packages']),
-    ('show-disk-space', [show_disk_space, 'Show system disk space']),
-    ('show-boot-time', [show_boot_time, 'Show last boot time']),
-    ('show-ntp', [show_ntp, 'Show NTP info']),
-    ('show-time', [show_time, 'Show date and time']),
-    ('show-tz', [show_timezone, 'Show timezone']),
-    ('show-log', [show_log, 'Display log content'])
+    ('server', [show_ovs, 'Show OVS server generic info']),
+    ('hardware', [show_hardware, 'Show hardware info']),
+    ('phy-luns', [show_physical_luns, 'Show physical LUNs info']),
+    ('nfsmnt', [show_mounted_fs, 'Show mounted file systems']),
+    ('yum', [show_repos, 'Show YUM repositories']),
+    ('pkgs', [show_pkgs, 'Show installed packages']),
+    ('disk-space', [show_disk_space, 'Show system disk space']),
+    ('boot-time', [show_boot_time, 'Show last boot time']),
+    ('ntp', [show_ntp, 'Show NTP info']),
+    ('datetime', [show_datetime, 'Show date and time']),
+    ('timezone', [show_timezone, 'Show timezone']),
+    ('log', [show_log, 'Display log content'])
 ))
 
 """
@@ -242,7 +258,7 @@ if __name__ == "__main__":
         print "%s" % e
         exit(1)
     except KeyboardInterrupt:
-        ### handle keyboard interrupt ###
+        # handle keyboard interrupt
         exit(0)
     except (Exception) as e:
         print "%s" % repr(e)

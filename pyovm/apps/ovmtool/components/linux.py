@@ -10,10 +10,12 @@ class Linux(object):
         self.srv_raw_data = None
         self.server = None
         self.hardware = None
+        self.network = None
 
         self.phy_luns = []
         self.scsi_disks = []
         self.scsi_targets = []
+        self.repos_db = []
 
         self.mounted_fs = []
         self.repos = {}
@@ -77,7 +79,7 @@ class Linux(object):
             r = self.conn.discover_hardware()
             assert(isinstance(r, tuple))
             if(isinstance(r[0], basestring)):
-                s='<?xml version'
+                s = '<?xml version'
                 if s in r[0]:
                     d = xmltodict.parse(xml_input=r[0],
                                         xml_attribs=True,
@@ -89,7 +91,33 @@ class Linux(object):
                     self.hardware = Hardware(data)
                     return self.hardware
                 else:
-                    #print json.dumps(d, indent=4)
+                    raise Exception("Failed to parse data from response")
+            else:
+                print json.dumps(r[0], indent=4)
+                raise Exception("Failed to parse data from response")
+        except Exception as e:
+            print("[Linux] Error: %s" % repr(e))
+
+    def discover_network(self):
+        """'discover_network' RPC"""
+        try:
+            r = self.conn.discover_network()
+            assert(isinstance(r, tuple))
+            if(isinstance(r[0], basestring)):
+                s='<?xml version'
+                if s in r[0]:
+                    d = xmltodict.parse(xml_input=r[0],
+                                        xml_attribs=True,
+                                        process_namespaces=True,
+                                        postprocessor=self.__xml_postprocessor)
+                    # print json.dumps(d, indent=4)
+                    p1 = 'discover_network_result'
+                    p2 = 'network'
+                    p3 = 'active'
+                    data = d[p1][p2][p3]
+                    self.network = Network(data)
+                    return self.network
+                else:
                     raise Exception("Failed to parse data from response")
             else:
                 print json.dumps(r[0], indent=4)
@@ -264,13 +292,42 @@ class Linux(object):
         except Exception as e:
             print("[Linux] Error: %s" % repr(e))
 
+    def discover_repository_db(self):
+        """'discover_repository_db' RPC"""
+        try:
+            r = self.conn.discover_repository_db()
+            assert(isinstance(r, tuple))
+            if(isinstance(r[0], basestring)):
+                s = '<?xml version'
+                if s in r[0]:
+                    d = xmltodict.parse(xml_input=r[0],
+                                        xml_attribs=True,
+                                        process_namespaces=True,
+                                        postprocessor=self.__xml_postprocessor)
+                    p1 = 'discover_repository_db_result'
+                    p2 = 'repositorydblist'
+                    p3 = 'repository'
+                    try:
+                        repos = d.get(p1).get(p2).get(p3)
+                        for repo in repos:
+                            obj = RepoDB(repo)
+                            self.repos_db.append(obj)
+                        return self.repos_db
+                    except AttributeError as e:
+                        raise Exception("Failed to parse data from response,"
+                                        " reason: %s" % repr(e))
+                else:
+                    raise Exception("Failed to parse data from response")
+        except Exception as e:
+            print("[Linux] Error: %s" % repr(e))
+
     def get_log(self, logfile):
         """'get_log' RPC"""
         try:
             r = self.conn.get_log([logfile])
             assert(isinstance(r, tuple))
-            #print r[0]
-            #print type(r[0])
+            # print r[0]
+            # print type(r[0])
             if(isinstance(r[0], dict)):
                 if(logfile == 'ovs-agent'):
                     log = OVSAgentLog(logfile, r[0][logfile])
@@ -298,19 +355,29 @@ class Linux(object):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True,
                           indent=4)
 
+
 class Server(Linux):
     """'discover_server' RPC"""
     def __init__(self, data):
         for k, v in data.items():
             setattr(self, k, v)
-        #print self.to_json()
+        # print self.to_json()
+
 
 class Hardware(Linux):
     """'discover_hardware' RPC"""
     def __init__(self, data):
         for k, v in data.items():
             setattr(self, k, v)
-        #print self.to_json()
+        # print self.to_json()
+
+
+class Network(Linux):
+    """'discover_network' RPC"""
+    def __init__(self, data):
+        for k, v in data.items():
+            setattr(self, k, v)
+
 
 '''
 class PhysicalLUNs(Linux):
@@ -320,54 +387,69 @@ class PhysicalLUNs(Linux):
         pass
 '''
 
+
 class SCSIDisc(Linux):
     """'discover_physical_luns' RPC"""
     def __init__(self, data):
         for k, v in data.items():
             setattr(self, k, v)
-        print self.to_json()
+        # print self.to_json()
+
 
 class SCSITarget(Linux):
     """'discover_physical_luns' RPC"""
     def __init__(self, data):
         for k, v in data.items():
             setattr(self, k, v)
-        print self.to_json()
+        # print self.to_json()
+
 
 class MountedFileSystem(Linux):
     """'discover_mounted_file_systems' RPC"""
     def __init__(self, data):
         for k, v in data.items():
             setattr(self, k, v)
-        #print self.to_json()
+        # print self.to_json()
+
 
 class Repositories(Linux):
     """'package_get_repositories' RPC"""
     def __init__(self, data):
         for k, v in data.items():
             setattr(self, k, v)
-        #print self.to_json()
+        # print self.to_json()
+
+
+class RepoDB(Linux):
+    """'discover_repository_db' RPC"""
+    def __init__(self, data):
+        for k, v in data.items():
+            setattr(self, k, v)
+        # print self.to_json()
+
 
 class Package(Linux):
     """'package_list' RPC"""
     def __init__(self, data):
         for k, v in data.items():
             setattr(self, k, v)
-        #print self.to_json()
+        # print self.to_json()
+
 
 class DiskSpace(Linux):
     """'get_system_disk_space' RPC"""
     def __init__(self, data):
         for k, v in data.items():
             setattr(self, k, v)
-        #print self.to_json()
+        # print self.to_json()
+
 
 class BootTime(Linux):
     """'get_last_boot_time' RPC"""
     def __init__(self, data):
         for k, v in data.items():
             setattr(self, k, v)
-        #print self.to_json()
+        # print self.to_json()
 
     def boot_time(self):
         if self.last_boot_time:
@@ -379,13 +461,15 @@ class BootTime(Linux):
             return time.strftime('%m/%d/%Y %H:%M:%S',
                                  time.localtime(float(self.local_time)))
 
+
 class NTP(Linux):
     """'get_ntp' RPC"""
     def __init__(self, data):
         self.ntp_servers = data[0]
         self.local_time_source = data[1]
         self.is_ntp_running = data[2]
-        #print self.to_json()
+        # print self.to_json()
+
 
 class DateTime(Linux):
     """'get_datetime' RPC"""
@@ -396,22 +480,25 @@ class DateTime(Linux):
         self.hour = data[3]
         self.min = data[4]
         self.sec = data[5]
-        #print self.to_json()
+        # print self.to_json()
 
     def to_str(self):
         s = "%s/%s/%s %s:%s:%s" % (self.month, self.date, self.year,
                                    self.hour, self.min, self.sec)
         return s
 
+
 class TimeZone(Linux):
     """'get_timezone' RPC"""
     def __init__(self, data):
         self.tz = data[0]
         self.utc = data[1]
-        
+
     def to_str(self):
-        s = "\"%s\" (\"%s\")" % (self.tz, 'UTC' if self.utc is 'UTC' else 'Local Time')
+        s = "\"%s\" (\"%s\")" % (self.tz,
+                                 'UTC' if self.utc is 'UTC' else 'Local Time')
         return s
+
 
 class Log(Linux):
     """'get_log' RPC"""
@@ -434,6 +521,7 @@ class Log(Linux):
     def info(self):
         assert(False), "not implemented"
 
+
 class OVSAgentLog(Log):
     info_pattern = ' INFO '
     dbg_pattern = ' DEBUG '
@@ -448,7 +536,7 @@ class OVSAgentLog(Log):
                      self.dbg_pattern: [],
                      self.warn_pattern: [],
                      self.err_pattern: []
-                    }
+                     }
         slist = self.to_str().split("\n")
         t = []
         msg_type = None
@@ -457,7 +545,7 @@ class OVSAgentLog(Log):
                 if msg_type and t:
                     self.msgs[msg_type].append("\n".join(t))
                     t = []
-        
+
                 if s.find(self.info_pattern) != -1:
                     msg_type = self.info_pattern
                 elif s.find(self.dbg_pattern) != -1:
@@ -499,7 +587,7 @@ class OVSAgentLog(Log):
             s += msg
         s += self.sep
         return s
-    
+
     def info(self):
         s = ""
         for msg in self.msgs[self.info_pattern]:
@@ -509,13 +597,16 @@ class OVSAgentLog(Log):
         s += self.sep
         return s
 
+
 class MessagesLog(Log):
     def __init__(self, *args, **kwargs):
         super(MessagesLog, self).__init__(*args, **kwargs)
 
+
 class DmesgLog(Log):
     def __init__(self, *args, **kwargs):
         super(DmesgLog, self).__init__(*args, **kwargs)
+
 
 class XendLog(Log):
     def __init__(self, *args, **kwargs):

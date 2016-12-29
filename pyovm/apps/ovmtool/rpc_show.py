@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 import sys
-import os
-#import ordereddict
+# import os
+# import ordereddict
 import yaml
 
 from collections import OrderedDict
 from argparse import ArgumentParser
-from argparse import RawDescriptionHelpFormatter
+# from argparse import RawDescriptionHelpFormatter
 
 from components.linux import Linux
 
@@ -19,6 +19,7 @@ __updated__ = '2016-07-14'
 DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
+
 
 class OVMCfg():
     """
@@ -35,29 +36,34 @@ class OVMCfg():
     def to_string(self):
         return "%s:%s" % (self.host, self.port)
 
+
 class CLIError(Exception):
     """Generic exception to raise and log different fatal errors."""
     def __init__(self, msg):
         super(CLIError).__init__(type(self))
         self.msg = "%s" % msg
+
     def __str__(self):
         return self.msg
+
     def __unicode__(self):
         return self.msg
+
 
 class CLIParser(ArgumentParser):
     def __init__(self, *args, **kwargs):
         super(CLIParser, self).__init__(*args, **kwargs)
-        #ArgumentParser.__init__(self, *args, **kwargs)
+        # ArgumentParser.__init__(self, *args, **kwargs)
 
-    def error(self, message): 
+    def error(self, message):
         s = "\nError: %s\n\n%s" % (message, self.format_usage())
         raise CLIError(s)
+
 
 class CLIExecuter(object):
     """ CLI commands parser and executer """
     def __init__(self, *cmd_opts):
-        self.prog = 'ovs_show'
+        self.prog = 'rpc-show'
         usage_str = ("%(prog)s [-h] [-C <path>] <command> [<args>]\n"
                      "('%(prog)s -h' for details)\n"
                      "\nAvailable commands are:\n")
@@ -81,7 +87,7 @@ class CLIExecuter(object):
         parser.add_argument('command', help='command to be executed')
 
         args, remaining_args = parser.parse_known_args()
-        
+
         # Get attributes from configuration file
         try:
             self.cfg = self.get_cfg(args.cfg_file)
@@ -115,15 +121,18 @@ class CLIExecuter(object):
         cfg = OVMCfg(host, port, name, pswd)
         return cfg
 
+
 def show_ovs(dst, *args):
     linux = Linux(dst)
     srv = linux.discover_server()
     print srv.to_json()
 
+
 def show_hardware(dst, *args):
     linux = Linux(dst)
     hw = linux.discover_hardware()
     print hw.to_json()
+
 
 def show_physical_luns(dst, *args):
     linux = Linux(dst)
@@ -135,16 +144,19 @@ def show_physical_luns(dst, *args):
         for e in linux.scsi_targets:
             print e.to_json()
 
+
 def show_mounted_fs(dst, *args):
     linux = Linux(dst)
     nfs = linux.discover_mounted_file_systems()
     for item in nfs:
         print("%s" % item.to_json())
 
+
 def show_repos(dst, *args):
     linux = Linux(dst)
     repos = linux.package_get_repositories()
     print repos.to_json()
+
 
 def show_pkgs(dst, *args):
     linux = Linux(dst)
@@ -157,10 +169,12 @@ def show_pkgs(dst, *args):
         for pkg in linux.pkgs_installed:
             print pkg.to_json()
 
+
 def show_disk_space(dst, *args):
     linux = Linux(dst)
     ds = linux.get_system_disk_space()
     print ds.to_json()
+
 
 def show_boot_time(dst, *args):
     linux = Linux(dst)
@@ -170,10 +184,12 @@ def show_boot_time(dst, *args):
     print("  Last Boot Time: %s" % bt.boot_time())
     print("\n").strip()
 
+
 def show_ntp(dst, *args):
     linux = Linux(dst)
     ntp = linux.get_ntp()
     print ntp.to_json()
+
 
 def show_datetime(dst, *args):
     linux = Linux(dst)
@@ -181,7 +197,8 @@ def show_datetime(dst, *args):
     print("\n").strip()
     print("   %s" % (t.to_str()))
     print("\n").strip()
-    #print t.to_json()
+    # print t.to_json()
+
 
 def show_timezone(dst, *args):
     linux = Linux(dst)
@@ -189,47 +206,69 @@ def show_timezone(dst, *args):
     print("\n").strip()
     print("   %s" % (tz.to_str()))
     print("\n").strip()
-    #print tz.to_json()
+    # print tz.to_json()
+
+
+def show_repository_db(dst, *args):
+    print("show_repository_db")
+    linux = Linux(dst)
+    repos = linux.discover_repository_db()
+    for repo in repos:
+        print("%s" % repo.to_json())
+
 
 def show_log(dst, *args):
     linux = Linux(dst)
-    #l = ["messages", "dmesg"]
-    #logfile = 'messages'
-    #logfile = 'dmesg'
-    #logfile = 'xend'
+    # l = ["messages", "dmesg"]
+    # logfile = 'messages'
+    # logfile = 'dmesg'
+    # logfile = 'xend'
     logfile = 'ovs-agent'
-    
     log = linux.get_log(logfile)
     try:
-        #print("%s" % log.to_str())
-        print "%s" % log.errors()
-        #print "%s" % log.warnings()
-        #print "%s" % log.info()
-        #print "%s" % log.debug()
+        # print("%s" % log.to_str())
+        # print "%s" % log.errors()
+        print "%s" % log.warnings()
+        # print "%s" % log.info()
+        # print "%s" % log.debug()
+        pass
     except (KeyboardInterrupt, SystemExit):
-        raise
+        print "!!!!!!!!\n\n"
+        raise "!!!!!!!!\n\n"
+
 
 def show_network(dst, *args):
-    print("show_network")
+    # print("show_network")
+    linux = Linux(dst)
+    nw = linux.discover_network()
+    print nw.to_json()
+    # print srv.to_json()
+
 
 def show_eth(dst, *args):
     print("show_eth")
 
+
 def show_infiniband(dst, *args):
     print("show_infiniband")
+
 
 def show_bonding(dst, *args):
     print("show_bonding")
 
+
 def show_bridge(dst, *args):
     print("show_bridge")
+
 
 def show_cluster(dst, *args):
     print("show_cluster")
 
+
 show_cmds = OrderedDict((
     ('server', [show_ovs, 'Show OVS server generic info']),
     ('hardware', [show_hardware, 'Show hardware info']),
+    ('network', [show_network, 'Show network info']),
     ('phy-luns', [show_physical_luns, 'Show physical LUNs info']),
     ('nfsmnt', [show_mounted_fs, 'Show mounted file systems']),
     ('yum', [show_repos, 'Show YUM repositories']),
@@ -239,7 +278,8 @@ show_cmds = OrderedDict((
     ('ntp', [show_ntp, 'Show NTP info']),
     ('datetime', [show_datetime, 'Show date and time']),
     ('timezone', [show_timezone, 'Show timezone']),
-    ('log', [show_log, 'Display log content'])
+    ('repo-db', [show_repository_db, 'Show repositories']),
+    ('log', [show_log, 'Display log content']),
 ))
 
 """

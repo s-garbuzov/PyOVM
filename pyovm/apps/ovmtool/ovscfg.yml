@@ -25,8 +25,17 @@
 # Set the following parameters according to your local network
 # environment setup (see NOTE in above)
 
-# Controller
-host: hostname
-port: 1234
-name: "name"
-pswd: "password"
+# OVM Server
+host: ovs235
+#host: ovs233
+#host: ovs090
+port: 8899
+name: "oracle"
+pswd: "oracle"
+
+# OVM Server in PCA rack
+# Access via pre-established SSH tunnel (port forwarding)
+#host: localhost
+#port: 8899
+#name: "oracle"
+#pswd: "Welcome1"
